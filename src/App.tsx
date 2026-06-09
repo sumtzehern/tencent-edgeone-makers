@@ -507,6 +507,30 @@ function AppInner() {
         if (!isWebSearchToolEvent(event)) {
           finishBotActivity();
         }
+
+        // Detect WSA_API_KEY-missing tool errors. The Claude SDK surfaces
+        // tool errors as a `debug_msg` whose `preview` JSON carries a
+        // tool_use_result with is_error:true and a "WSA_API_KEY" mention.
+        // Flip the in-bubble web_search chip to error state so the user
+        // sees an actionable hint with a link to the WSA product page.
+        // Not persisted: a refresh clears the chip; a successful retry
+        // calls setBotActivity({ status: 'active' }) and clears errorCode.
+        if (event.eventType === 'debug_msg') {
+          const preview = (event.data as { preview?: string } | null)?.preview;
+          if (
+            typeof preview === 'string' &&
+            preview.includes('WSA_API_KEY') &&
+            preview.includes('"is_error":true')
+          ) {
+            setBotActivity({
+              type: 'web_search',
+              label: 'Web search unavailable',
+              status: 'error',
+              errorCode: 'wsa_missing',
+            });
+          }
+        }
+
         // Coalesce consecutive text_delta events into a single growing entry,
         // so a multi-paragraph response doesn't flood the debug panel with
         // hundreds of one-token rows.
@@ -612,6 +636,10 @@ function AppInner() {
     }
 
     finishBotActivity();
+    // Clear the in-bubble blinking caret. onDone/onError normally do this,
+    // but fetch.abort() throws AbortError that sendMessageStream silently
+    // swallows — neither callback fires, so we have to do it here too.
+    clearBotStreaming();
     updateBotMessage(content => content ? content + '\n\n' + t("status.stopped") : t("status.stopped"));
     setLoading(false);
 
@@ -620,7 +648,7 @@ function AppInner() {
         updateBotMessage(content => content + '\n\n' + t("status.backendError"));
       }
     });
-  }, [finishBotActivity, updateBotMessage, t]);
+  }, [finishBotActivity, clearBotStreaming, updateBotMessage, t]);
 
   /** User clicked a conversation in the sidebar. */
   const handleSelectConversation = useCallback((id: string) => {

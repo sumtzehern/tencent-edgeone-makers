@@ -58,7 +58,7 @@ function getImageSrc(img: ImageAttachment | string): string {
 }
 
 export default function ChatBubble({ message }: Props) {
-  const { lang } = useT();
+  const { t, lang } = useT();
   const isUser = message.role === 'user';
   const content = isUser ? message.content : normalizeMarkdown(message.content);
   const hasImages = message.images && message.images.length > 0;
@@ -73,17 +73,41 @@ export default function ChatBubble({ message }: Props) {
       <div className={`${styles.bubble} ${isUser ? styles.userBubble : styles.botBubble}`}>
         {!isUser && activity?.type === 'web_search' && (
           <div
-            className={`${styles.webSearchActivity} ${activity.status === 'done' ? styles.webSearchDone : styles.webSearchActive}`}
+            className={`${styles.webSearchActivity} ${
+              activity.status === 'error' ? styles.webSearchError :
+              activity.status === 'done'  ? styles.webSearchDone  :
+                                            styles.webSearchActive
+            }`}
             role="status"
             aria-live="polite"
           >
             <span className={styles.searchGlyph} aria-hidden="true" />
-            <span className={styles.searchLabel}>{activity.label}</span>
-            <span className={styles.searchDots} aria-hidden="true">
-              <span />
-              <span />
-              <span />
-            </span>
+            <span className={styles.searchLabel}>{
+              activity.status === 'error' && activity.errorCode === 'wsa_missing'
+                ? t('webSearch.error.wsaMissing')
+                : activity.label
+            }</span>
+            {activity.status === 'error' ? (
+              <>
+                <span className={styles.searchErrorMark} aria-hidden="true">⚠️</span>
+                {activity.errorCode === 'wsa_missing' && (
+                  <a
+                    className={styles.searchErrorCta}
+                    href="https://cloud.tencent.com/product/wsa"
+                    target="_blank"
+                    rel="noreferrer noopener"
+                  >
+                    {t('webSearch.error.wsaCta')} →
+                  </a>
+                )}
+              </>
+            ) : (
+              <span className={styles.searchDots} aria-hidden="true">
+                <span />
+                <span />
+                <span />
+              </span>
+            )}
           </div>
         )}
         {isUser
