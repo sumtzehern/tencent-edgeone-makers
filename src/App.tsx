@@ -31,6 +31,7 @@ import ChatInput from './components/ChatInput';
 import CodeViewer from './components/CodeViewer';
 import DebugPanel from './components/DebugPanel';
 import ConversationSidebar from './components/ConversationSidebar';
+import GitHubLink from './components/GitHubLink';
 import styles from './App.module.css';
 
 const LAMP_IDS = ['commands', 'files', 'code_interpreter', 'browser'] as const;
@@ -794,6 +795,7 @@ function AppInner() {
           )}
         </div>
       </div>
+      <GitHubLink />
     </div>
   );
 }
