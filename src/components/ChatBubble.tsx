@@ -93,7 +93,7 @@ export default function ChatBubble({ message }: Props) {
                 {activity.errorCode === 'wsa_missing' && (
                   <a
                     className={styles.searchErrorCta}
-                    href="https://cloud.tencent.com/product/wsa"
+                    href="https://pages.edgeone.ai/document/sandbox-network-search-tool"
                     target="_blank"
                     rel="noreferrer noopener"
                   >
