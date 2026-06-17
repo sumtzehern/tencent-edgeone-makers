@@ -3,17 +3,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# ========== Fix SSL for the entire process ==========
-# Use truststore so Python reads from the system certificate store directly
-# (macOS Keychain / Windows Certificate Store). Fixes sandbox tool calls
-# failing on local macOS dev when SSL_CERT_FILE doesn't take effect.
-try:
-    import truststore
-
-    truststore.inject_into_ssl()
-except Exception:
-    pass
-
 
 CLAUDE_MODEL = os.environ.get("CLAUDE_MODEL") or os.environ.get("AI_GATEWAY_MODEL") or "@makers/deepseek-v4-flash"
 
