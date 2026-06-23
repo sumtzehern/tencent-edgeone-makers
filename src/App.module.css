@@ -17,7 +17,7 @@
   width: 560px;
   height: 560px;
   border-radius: 50%;
-  background: radial-gradient(circle, #f5c84218 0%, transparent 70%);
+  background: radial-gradient(circle, #3b82f618 0%, transparent 70%);
   filter: blur(60px);
   pointer-events: none;
   animation: blobFloat 14s ease-in-out infinite alternate;
@@ -45,8 +45,8 @@
   position: relative;
   z-index: 1;
   display: flex;
-  width: min(1440px, 98vw);
-  height: min(88vh, 840px);
+  width: min(1600px, 99vw);
+  height: min(95vh, 960px);
   border-radius: var(--radius-xl);
   overflow: hidden;
   border: 1px solid var(--bg-border);
