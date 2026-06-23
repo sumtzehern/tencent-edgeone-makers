@@ -49,3 +49,6 @@ AGENTS.md
 .edgeone/*
 .tef_dist/*
   
+# Added by Braintrust Wizard
+.env.braintrust
+.braintrust.json

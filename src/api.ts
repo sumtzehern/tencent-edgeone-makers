@@ -41,12 +41,19 @@ export interface SkillLoadedPayload {
   status: 'loaded';
 }
 
+export interface TokenUsage {
+  inputTokens: number;
+  outputTokens: number;
+  totalTokens: number;
+}
+
 export interface StreamCallbacks {
   onTextDelta: (delta: string) => void;
   onToolCalled: (toolName: string) => void;
   onImage: (payload: ImageSsePayload) => void;
   onSkillAvailable?: (skills: SkillInfo[]) => void;
   onSkillLoaded?: (payload: SkillLoadedPayload) => void;
+  onTokenUsage?: (usage: TokenUsage) => void;
   onDone: () => void;
   onError: (err: Error) => void;
   onRawEvent?: (event: RawSseEvent) => void;
@@ -214,6 +221,13 @@ function dispatchSseChunk(part: string, cb: StreamCallbacks, markDone: () => voi
         break;
       case 'skill_loaded':
         cb.onSkillLoaded?.({ name: parsed.name, status: 'loaded' });
+        break;
+      case 'token_usage':
+        cb.onTokenUsage?.({
+          inputTokens: parsed.inputTokens ?? 0,
+          outputTokens: parsed.outputTokens ?? 0,
+          totalTokens: parsed.totalTokens ?? 0,
+        });
         break;
       case 'error':
         cb.onError(new Error(parsed.message || 'agent returned error'));

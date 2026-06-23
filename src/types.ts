@@ -21,6 +21,11 @@ export interface Message {
   content: string;
   timestamp: number;
   images?: (ImageAttachment | string)[];
+  usage?: {
+    inputTokens: number;
+    outputTokens: number;
+    totalTokens: number;
+  };
   activity?: {
     type: 'web_search';
     label: string;

@@ -5,11 +5,12 @@ Route: POST /chat
 Response: SSE stream (text/event-stream)
 
 SSE event protocol:
-  event: text_delta  data: {"delta": "..."}
-  event: tool_called data: {"tool": "ToolName"}
-  event: ping        data: {"ts": 1710000000000}
-  event: error       data: {"message": "..."}
-  event: done        data: {"stopped": false}
+  event: text_delta   data: {"delta": "..."}
+  event: tool_called  data: {"tool": "ToolName"}
+  event: token_usage  data: {"inputTokens": 123, "outputTokens": 456, "totalTokens": 579}
+  event: ping         data: {"ts": 1710000000000}
+  event: error        data: {"message": "..."}
+  event: done         data: {"stopped": false}
 """
 
 from __future__ import annotations
@@ -111,6 +112,8 @@ async def handler(ctx: Any) -> AsyncGenerator[str, None]:
     stopped = False
     full_response = ""
     last_ping = time.time()
+    input_tokens = 0
+    output_tokens = 0
 
     try:
         async with httpx.AsyncClient(timeout=120.0) as client:
@@ -160,8 +163,16 @@ async def handler(ctx: Any) -> AsyncGenerator[str, None]:
                                 yield sse_event("text_delta", {"delta": text})
 
                     elif chunk_type == "message_delta":
-                        # end of message — stop_reason etc
-                        pass
+                        # Capture token usage from final message_delta chunk
+                        usage = chunk.get("usage", {})
+                        if usage.get("output_tokens"):
+                            output_tokens = usage["output_tokens"]
+
+                    elif chunk_type == "message_start":
+                        # Capture input token count from message_start
+                        usage = chunk.get("message", {}).get("usage", {})
+                        if usage.get("input_tokens"):
+                            input_tokens = usage["input_tokens"]
 
                     elif chunk_type == "message_stop":
                         break
@@ -172,12 +183,35 @@ async def handler(ctx: Any) -> AsyncGenerator[str, None]:
                         yield sse_event("done", {"stopped": False})
                         return
 
+                    # OpenAI-compatible format (fallback for gateway)
+                    choices = chunk.get("choices", [])
+                    if choices:
+                        delta = choices[0].get("delta", {})
+                        text = delta.get("content", "")
+                        if text:
+                            full_response += text
+                            yield sse_event("text_delta", {"delta": text})
+                        # Capture usage from OpenAI-style final chunk
+                        usage = chunk.get("usage", {})
+                        if usage:
+                            input_tokens = usage.get("prompt_tokens", input_tokens)
+                            output_tokens = usage.get("completion_tokens", output_tokens)
+
     except httpx.TimeoutException:
         logger.error("[error] request timed out")
         yield sse_event("error", {"message": "Request timed out"})
     except Exception as e:
         logger.error(f"[error] {e}")
         yield sse_event("error", {"message": str(e)})
+
+    # Emit token usage for observability
+    if input_tokens or output_tokens:
+        yield sse_event("token_usage", {
+            "inputTokens": input_tokens,
+            "outputTokens": output_tokens,
+            "totalTokens": input_tokens + output_tokens,
+        })
+        logger.log(f"[tokens] input={input_tokens} output={output_tokens} total={input_tokens + output_tokens}")
 
     # --- Save assistant response ---
     if cid and full_response.strip():

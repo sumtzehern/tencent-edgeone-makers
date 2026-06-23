@@ -93,6 +93,7 @@ export default function ChatBubble({ message }: Props) {
   const content = isUser ? message.content : normalizeMarkdown(message.content);
   const hasImages = message.images && message.images.length > 0;
   const activity = message.activity;
+  const usage = message.usage;
 
   // Don't render empty assistant messages (unless they have images)
   if (!isUser && !message.content && !hasImages && !activity) return null;
@@ -179,6 +180,26 @@ export default function ChatBubble({ message }: Props) {
         <span className={styles.time}>
           {new Date(message.timestamp).toLocaleTimeString(lang === 'zh' ? 'zh-CN' : 'en-US', { hour: '2-digit', minute: '2-digit' })}
         </span>
+        {!isUser && usage && (
+          <div className={styles.tokenBadge}>
+            <span className={styles.tokenItem}>
+              <span className={styles.tokenLabel}>in</span>
+              <span className={styles.tokenValue}>{usage.inputTokens.toLocaleString()}</span>
+            </span>
+            <span className={styles.tokenSep}>·</span>
+            <span className={styles.tokenItem}>
+              <span className={styles.tokenLabel}>out</span>
+              <span className={styles.tokenValue}>{usage.outputTokens.toLocaleString()}</span>
+            </span>
+            <span className={styles.tokenSep}>·</span>
+            <span className={styles.tokenItem}>
+              <span className={styles.tokenLabel}>total</span>
+              <span className={styles.tokenValue}>{usage.totalTokens.toLocaleString()}</span>
+            </span>
+            <span className={styles.tokenSep}>·</span>
+            <span className={styles.tokenCost}>cost: –</span>
+          </div>
+        )}
       </div>
       {isUser && (
         <div className={`${styles.avatar} ${styles.userAvatar}`}>

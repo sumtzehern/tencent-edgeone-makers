@@ -500,6 +500,16 @@ function AppInner() {
         handleImageEvent(payload);
       },
 
+      onTokenUsage(usage) {
+        setMessages(prev =>
+          prev.map(m =>
+            m.id === botMsgIdRef.current
+              ? { ...m, usage }
+              : m
+          )
+        );
+      },
+
       onRawEvent(event) {
         // Every backend SSE frame flows through here, so this is the cheapest
         // hook for "first byte from backend" — covers text_delta, tool_called,
